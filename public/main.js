@@ -22,10 +22,11 @@ const map = L.map("map", {
   inertia: true,
 });
 
-L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png", {
   maxZoom: 19,
   attribution:
-    '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+    '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
+  subdomains: "abcd",
 }).addTo(map);
 
 map.dragging.enable();
@@ -46,6 +47,7 @@ const moodPicker = document.getElementById("mood-picker");
 const menuToggle = document.getElementById("menu-toggle");
 const menuClose = document.getElementById("menu-close");
 const menuPanel = document.getElementById("menu-panel");
+const mapCenterButton = document.getElementById("map-center-btn");
 const defaultPlaceholder =
   postText?.getAttribute("placeholder") ||
   "メッセージやおすすめを残してみよう（なくてもOK）";
@@ -124,6 +126,27 @@ function initialize() {
       toggleMenu(false);
     }
   });
+
+  if (mapCenterButton) {
+    mapCenterButton.addEventListener("click", () => {
+      mapCenterButton.disabled = true;
+      const started = requestCurrentLocation({
+        centerMap: true,
+        setSelection: false,
+        silent: true,
+        onComplete: (success) => {
+          mapCenterButton.disabled = false;
+          if (!success) {
+            alert("現在地が利用できませんでした。位置情報の権限を確認してください。");
+          }
+        },
+      });
+      if (!started) {
+        mapCenterButton.disabled = false;
+        alert("現在地が利用できません。ブラウザの設定をご確認ください。");
+      }
+    });
+  }
 
   setInterval(fetchPosts, 30000);
 }

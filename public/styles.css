@@ -49,10 +49,11 @@ body {
   min-height: 100vh;
   background: linear-gradient(
     180deg,
-    rgba(7, 10, 28, 0.45) 0%,
-    rgba(7, 10, 28, 0.18) 38%,
+    rgba(7, 10, 28, 0.35) 0%,
+    rgba(7, 10, 28, 0.12) 36%,
     rgba(7, 10, 28, 0) 100%
   );
+  pointer-events: none;
 }
 
 .overlay > * {
@@ -145,6 +146,40 @@ body {
 .menu-action {
   width: 100%;
   justify-content: center;
+}
+
+.map-control-button {
+  position: absolute;
+  top: clamp(1rem, 5vh, 2.5rem);
+  right: clamp(4.5rem, 14vw, 6.5rem);
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  background: rgba(9, 14, 44, 0.78);
+  color: var(--text-primary);
+  border-radius: 14px;
+  padding: 0.55rem 0.85rem;
+  display: inline-flex;
+  gap: 0.45rem;
+  align-items: center;
+  font-size: 0.92rem;
+  cursor: pointer;
+  box-shadow: 0 10px 24px rgba(6, 10, 34, 0.45);
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.map-control-button svg {
+  width: 18px;
+  height: 18px;
+  fill: currentColor;
+}
+
+.map-control-button:hover {
+  background: rgba(9, 14, 44, 0.92);
+  transform: translateY(-2px);
+}
+
+.map-control-button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
 }
 
 .brand {
@@ -625,6 +660,14 @@ body {
     width: min(92vw, 320px);
   }
 
+  .map-control-button {
+    top: 0.75rem;
+    right: calc(0.75rem + 3.2rem);
+    bottom: auto;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.86rem;
+  }
+
   .composer-card,
   .timeline-card {
     padding: 0.95rem 1.05rem 1.05rem;
@@ -711,6 +754,12 @@ body {
     grid-area: timeline;
     max-height: calc(70vh - 2rem);
     justify-self: start;
+  }
+
+  .map-control-button {
+    top: 2rem;
+    right: calc(2rem + 3.6rem);
+    bottom: auto;
   }
 
   .timeline-list {
