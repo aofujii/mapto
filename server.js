@@ -66,16 +66,17 @@ app.post("/api/posts", (req, res) => {
     return res.status(400).json({ error: "lat and lng are required numbers" });
   }
 
-  const rawText = typeof text === "string" ? text : "";
-  const sanitizedText = rawText.trim().slice(0, 500);
-  const rawMood = typeof mood === "string" ? mood : "";
-  const sanitizedMood = rawMood.trim().slice(0, 8);
+  const hasText = typeof text === "string" && text.trim().length > 0;
+  const hasMood = typeof mood === "string" && mood.trim().length > 0;
 
-  if (!sanitizedText && !sanitizedMood) {
+  if (!hasText && !hasMood) {
     return res
       .status(400)
       .json({ error: "Either text or mood must be provided" });
   }
+
+  const sanitizedText = sanitizeText(text);
+  const sanitizedMood = sanitizeMood(mood);
 
   const timestamp = Date.now();
 
@@ -141,4 +142,20 @@ function distanceInMeters(lat1, lng1, lat2, lng2) {
 
 function toRad(value) {
   return (value * Math.PI) / 180;
+}
+
+function sanitizeText(value) {
+  if (typeof value !== "string") return "";
+  const trimmed = value.trim();
+  if (!trimmed) return "";
+  const limited = Array.from(trimmed).slice(0, 500).join("");
+  return limited || trimmed;
+}
+
+function sanitizeMood(value) {
+  if (typeof value !== "string") return "";
+  const trimmed = value.trim();
+  if (!trimmed) return "";
+  const limited = Array.from(trimmed).slice(0, 4).join("");
+  return limited || trimmed;
 }

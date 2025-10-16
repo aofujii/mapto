@@ -15,80 +15,130 @@
     <main class="app-shell">
       <div id="map" class="map-view"></div>
       <div class="overlay">
-        <header class="topbar">
-          <div class="brand">
-            <span class="brand-mark">📍</span>
-            <div>
-              <h1>MapTo</h1>
-              <p>今のきもちをマップにポストしよう</p>
-            </div>
-          </div>
-          <button
-            type="button"
-            id="enable-notifications"
-            class="secondary-button topbar-button"
-          >
-            投稿リマインダーを受け取る
-          </button>
-        </header>
+        <button id="menu-toggle" class="menu-toggle" aria-label="メニューを開く">
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
 
-        <section class="composer-card">
+        <aside
+          class="menu-panel"
+          id="menu-panel"
+          aria-hidden="true"
+          tabindex="-1"
+        >
+          <div class="menu-header">
+            <div class="brand">
+              <span class="brand-mark">📍</span>
+              <div>
+                <h1>MapTo</h1>
+                <p>近くの人と気分をシェアするマップ</p>
+              </div>
+            </div>
+            <button id="menu-close" class="menu-close" aria-label="メニューを閉じる">
+              ✕
+            </button>
+          </div>
+          <div class="menu-body">
+            <p>
+              気分の絵文字だけでも投稿OK。<br />
+              24時間で自動的に消えるので、気軽にシェアしましょう。
+            </p>
+            <button
+              type="button"
+              id="enable-notifications"
+              class="secondary-button menu-action"
+            >
+              投稿リマインダーを受け取る
+            </button>
+          </div>
+        </aside>
+
+        <section class="composer-card" id="composer-card" data-card="composer">
           <form id="post-form" class="post-form">
             <div class="composer-header">
               <h2>いまの気分をシェア</h2>
-              <button
-                type="button"
-                id="use-current-location"
-                class="secondary-button ghost"
-              >
-                現在地に合わせる
-              </button>
+              <div class="composer-actions">
+                <button
+                  type="button"
+                  class="collapse-toggle"
+                  data-target="composer"
+                  aria-expanded="true"
+                  aria-controls="composer-body"
+                >
+                  <span aria-hidden="true">－</span>
+                  <span class="sr-only">投稿フォームを折りたたむ</span>
+                </button>
+                <button
+                  type="button"
+                  id="use-current-location"
+                  class="secondary-button ghost"
+                >
+                  現在地に合わせる
+                </button>
+              </div>
             </div>
 
-            <div class="mood-picker" id="mood-picker">
-              <button type="button" data-mood="😊">😊</button>
-              <button type="button" data-mood="🔥">🔥</button>
-              <button type="button" data-mood="🌧️">🌧️</button>
-              <button type="button" data-mood="🌸">🌸</button>
-              <button type="button" data-mood="🍜">🍜</button>
-              <button type="button" data-mood="🎧">🎧</button>
-              <button type="button" data-mood="🏖️">🏖️</button>
-              <button type="button" data-mood="🚴">🚴</button>
-            </div>
+            <div class="composer-body collapsible-body" id="composer-body" data-open="true">
+              <div class="mood-picker" id="mood-picker">
+                <button type="button" data-mood="😊">😊</button>
+                <button type="button" data-mood="🔥">🔥</button>
+                <button type="button" data-mood="🌧️">🌧️</button>
+                <button type="button" data-mood="🌸">🌸</button>
+                <button type="button" data-mood="🍜">🍜</button>
+                <button type="button" data-mood="🎧">🎧</button>
+                <button type="button" data-mood="🏖️">🏖️</button>
+                <button type="button" data-mood="🚴">🚴</button>
+              </div>
 
-            <label class="sr-only" for="post-text">投稿内容</label>
-            <textarea
-              id="post-text"
-              name="text"
-              maxlength="500"
-              placeholder="メッセージやおすすめを残してみよう（なくてもOK）"
-            ></textarea>
-            <div class="form-footer">
-              <span id="selected-location" class="location-hint"
-                >投稿位置が未設定です。現在地か地図をタップして選んでください。</span
-              >
-              <button type="submit" class="primary-button">マップに投稿</button>
+              <label class="sr-only" for="post-text">投稿内容</label>
+              <textarea
+                id="post-text"
+                name="text"
+                maxlength="500"
+                placeholder="メッセージやおすすめを残してみよう（なくてもOK）"
+              ></textarea>
+              <div class="form-footer">
+                <span id="selected-location" class="location-hint"
+                  >投稿位置が未設定です。現在地か地図をタップして選んでください。</span
+                >
+                <button type="submit" class="primary-button">マップに投稿</button>
+              </div>
             </div>
           </form>
         </section>
 
-        <section class="timeline-card">
-          <div class="timeline-header">
-            <div>
-              <h2>近くの投稿</h2>
-              <p>最新の24時間だけが表示されます</p>
+        <section class="timeline-card" id="timeline-card" data-card="timeline">
+            <div class="timeline-header">
+              <div class="timeline-header-text">
+                <h2>近くの投稿</h2>
+                <p>最新の24時間だけが表示されます</p>
+              </div>
+            <div class="timeline-header-actions">
+              <label class="radius-select" for="radius">
+                <span>範囲</span>
+                <select id="radius">
+                  <option value="1000">1 km</option>
+                  <option value="3000">3 km</option>
+                  <option value="5000" selected>5 km</option>
+                  <option value="10000">10 km</option>
+                </select>
+              </label>
+              <button
+                type="button"
+                class="collapse-toggle"
+                data-target="timeline"
+                aria-expanded="true"
+                aria-controls="timeline-body"
+              >
+                <span aria-hidden="true">－</span>
+                <span class="sr-only">タイムラインを折りたたむ</span>
+              </button>
             </div>
-            <label class="radius-select">
-              <span>範囲</span>
-              <select id="radius">
-                <option value="1000">1 km</option>
-                <option value="3000">3 km</option>
-                <option value="5000" selected>5 km</option>
-                <option value="10000">10 km</option>
-              </select>
-            </label>
           </div>
-          <ul id="timeline" class="timeline-list"></ul>
+          <div class="timeline-body collapsible-body" id="timeline-body" data-open="false">
+            <ul id="timeline" class="timeline-list"></ul>
+          </div>
         </section>
       </div>
     </main>

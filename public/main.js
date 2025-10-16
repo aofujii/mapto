@@ -11,13 +11,28 @@ const NOTIFICATION_MESSAGES = [
   "お気に入りのスポットをMapToに投稿しませんか？",
 ];
 const REMINDER_LOOKAHEAD_DAYS = 3;
-const map = L.map("map").setView([35.6812, 139.7671], 12);
+const map = L.map("map", {
+  center: [35.6812, 139.7671],
+  zoom: 12,
+  dragging: true,
+  touchZoom: true,
+  scrollWheelZoom: !L.Browser.mobile,
+  doubleClickZoom: true,
+  tap: false,
+  inertia: true,
+});
 
 L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
   maxZoom: 19,
   attribution:
     '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
 }).addTo(map);
+
+map.dragging.enable();
+map.touchZoom.enable();
+map.whenReady(() => {
+  map.invalidateSize();
+});
 
 const markersLayer = L.layerGroup().addTo(map);
 const postForm = document.getElementById("post-form");
@@ -28,6 +43,9 @@ const timelineEl = document.getElementById("timeline");
 const useCurrentLocationBtn = document.getElementById("use-current-location");
 const enableNotificationsBtn = document.getElementById("enable-notifications");
 const moodPicker = document.getElementById("mood-picker");
+const menuToggle = document.getElementById("menu-toggle");
+const menuClose = document.getElementById("menu-close");
+const menuPanel = document.getElementById("menu-panel");
 const defaultPlaceholder =
   postText?.getAttribute("placeholder") ||
   "メッセージやおすすめを残してみよう（なくてもOK）";
@@ -40,11 +58,14 @@ let notificationTimers = [];
 let selectedMood = null;
 let swRegistration = null;
 let supportsTriggerScheduling = false;
+let menuIsOpen = false;
+const collapsibleControllers = {};
 
 initialize();
 
 function initialize() {
   registerServiceWorker();
+  setupCollapsibleControls();
   fetchPosts();
   requestCurrentLocation({ centerMap: true, setSelection: true, silent: true });
 
@@ -90,6 +111,20 @@ function initialize() {
     restoreNotificationPreference();
   }
 
+  if (menuToggle && menuPanel) {
+    menuToggle.setAttribute("aria-expanded", "false");
+    menuToggle.addEventListener("click", () => toggleMenu(!menuIsOpen));
+  }
+  if (menuClose) {
+    menuClose.addEventListener("click", () => toggleMenu(false));
+  }
+  document.addEventListener("click", handleGlobalClickForMenu);
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && menuIsOpen) {
+      toggleMenu(false);
+    }
+  });
+
   setInterval(fetchPosts, 30000);
 }
 
@@ -120,6 +155,7 @@ function setSelectedLocation(latlng, { source } = {}) {
       4
     )}, ${latlng.lng.toFixed(4)}`;
   }
+  syncCollapsibleHeight("composer");
 }
 
 function setSelectedMood(mood) {
@@ -137,6 +173,147 @@ function setSelectedMood(mood) {
   if (selectedMood && !postText.value.trim()) {
     postText.placeholder = defaultPlaceholder;
   }
+  syncCollapsibleHeight("composer");
+}
+
+function toggleMenu(open) {
+  if (!menuPanel || !menuToggle) return;
+  menuIsOpen = Boolean(open);
+  menuPanel.classList.toggle("menu-panel--open", menuIsOpen);
+  menuPanel.setAttribute("aria-hidden", menuIsOpen ? "false" : "true");
+  menuToggle.setAttribute("aria-expanded", menuIsOpen ? "true" : "false");
+  if (menuIsOpen) {
+    menuPanel.focus?.();
+  }
+}
+
+function handleGlobalClickForMenu(event) {
+  if (!menuIsOpen || !menuPanel || !menuToggle) return;
+  const target = event.target;
+  if (menuPanel.contains(target) || menuToggle.contains(target)) {
+    return;
+  }
+  toggleMenu(false);
+}
+
+function setupCollapsibleControls() {
+  const configs = [
+    {
+      key: "composer",
+      card: document.getElementById("composer-card"),
+      body: document.getElementById("composer-body"),
+      toggle: document.querySelector('.collapse-toggle[data-target="composer"]'),
+      collapseLabel: "投稿フォームを折りたたむ",
+      expandLabel: "投稿フォームを表示する",
+    },
+    {
+      key: "timeline",
+      card: document.getElementById("timeline-card"),
+      body: document.getElementById("timeline-body"),
+      toggle: document.querySelector('.collapse-toggle[data-target="timeline"]'),
+      collapseLabel: "タイムラインを折りたたむ",
+      expandLabel: "タイムラインを表示する",
+    },
+  ];
+
+  configs.forEach((config) => {
+    const controller = createCollapsibleController(config);
+    if (controller) {
+      collapsibleControllers[config.key] = controller;
+    }
+  });
+
+  window.addEventListener("resize", () => {
+    Object.values(collapsibleControllers).forEach((controller) => {
+      controller.refreshHeight();
+    });
+    map.invalidateSize();
+  });
+}
+
+function createCollapsibleController({
+  key,
+  card,
+  body,
+  toggle,
+  collapseLabel,
+  expandLabel,
+}) {
+  if (!card || !body || !toggle) return null;
+  const iconSpan = toggle.querySelector('[aria-hidden="true"]');
+  const srSpan = toggle.querySelector(".sr-only");
+
+  const controller = {
+    key,
+    card,
+    body,
+    toggle,
+    collapseLabel,
+    expandLabel,
+    collapsed: false,
+    refreshHeight() {
+      if (controller.collapsed) return;
+      requestAnimationFrame(() => {
+        if (controller.collapsed) return;
+        body.style.maxHeight = `${body.scrollHeight}px`;
+      });
+    },
+    setCollapsed(nextState) {
+      controller.collapsed = nextState;
+      card.classList.toggle("card-collapsed", nextState);
+      toggle.setAttribute("aria-expanded", nextState ? "false" : "true");
+      if (nextState) {
+        body.style.maxHeight = "0px";
+        body.dataset.open = "false";
+        if (iconSpan) iconSpan.textContent = "＋";
+        if (srSpan) srSpan.textContent = expandLabel;
+      } else {
+        body.dataset.open = "true";
+        requestAnimationFrame(() => {
+          if (controller.collapsed) return;
+          body.style.maxHeight = `${body.scrollHeight}px`;
+        });
+        if (iconSpan) iconSpan.textContent = "－";
+        if (srSpan) srSpan.textContent = collapseLabel;
+      }
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          map.invalidateSize();
+        });
+      });
+    },
+  };
+
+  body.dataset.open = "true";
+  const startCollapsed = key === "timeline";
+  toggle.setAttribute("aria-expanded", startCollapsed ? "false" : "true");
+  if (iconSpan) iconSpan.textContent = startCollapsed ? "＋" : "－";
+  if (srSpan) srSpan.textContent = startCollapsed ? expandLabel : collapseLabel;
+  controller.collapsed = startCollapsed;
+  if (startCollapsed) {
+    body.dataset.open = "false";
+    body.style.maxHeight = "0px";
+    card.classList.add("card-collapsed");
+  } else {
+    controller.refreshHeight();
+  }
+
+  // Initialize expanded state without animation flash.
+  requestAnimationFrame(() => {
+    controller.setCollapsed(startCollapsed);
+  });
+
+  toggle.addEventListener("click", () => {
+    controller.setCollapsed(!controller.collapsed);
+  });
+
+  return controller;
+}
+
+function syncCollapsibleHeight(key) {
+  const controller = collapsibleControllers[key];
+  if (!controller || controller.collapsed) return;
+  controller.refreshHeight();
 }
 
 async function registerServiceWorker() {
@@ -534,6 +711,7 @@ async function handleSubmit(event) {
     postText.value = "";
     postText.placeholder = defaultPlaceholder;
     setSelectedMood(null);
+    syncCollapsibleHeight("composer");
     const created = await response.json();
     highlightNewPost(created.id);
     fetchPosts();
@@ -577,6 +755,7 @@ function renderPosts(posts, centerLatLng) {
     empty.className = "empty-state";
     empty.textContent = "近くの投稿はまだありません。最初の投稿をしてみましょう！";
     timelineEl.appendChild(empty);
+    syncCollapsibleHeight("timeline");
     return;
   }
 
@@ -584,6 +763,7 @@ function renderPosts(posts, centerLatLng) {
     addMarker(post);
     timelineEl.appendChild(buildTimelineItem(post, centerLatLng));
   });
+  syncCollapsibleHeight("timeline");
 }
 
 function addMarker(post) {
@@ -731,6 +911,9 @@ function setFormDisabled(disabled) {
   Array.from(postForm.elements).forEach((el) => {
     el.disabled = disabled;
   });
+  if (!disabled) {
+    syncCollapsibleHeight("composer");
+  }
 }
 
 function safeJson(response) {
@@ -797,3 +980,5 @@ function pickNotificationMessage() {
     Math.floor(Math.random() * NOTIFICATION_MESSAGES.length)
   ];
 }
+map.dragging.enable();
+map.touchZoom.enable();
