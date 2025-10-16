@@ -1,4 +1,5 @@
 const express = require("express");
+const fs = require("fs");
 const path = require("path");
 const { randomUUID } = require("crypto");
 
@@ -7,9 +8,12 @@ const PORT = process.env.PORT || 3000;
 
 const POST_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
 const DEFAULT_RADIUS_METERS = 5000;
+const DATA_DIR = path.join(__dirname, "data");
+const DATA_FILE = path.join(DATA_DIR, "posts.json");
 
 /** @type {Array<Post>} */
-const posts = [];
+const posts = loadPosts();
+purgeExpiredPosts();
 
 /**
  * @typedef {Object} Post
@@ -91,6 +95,7 @@ app.post("/api/posts", (req, res) => {
   };
 
   posts.push(post);
+  persistPosts();
   res.status(201).json(post);
 });
 
@@ -103,6 +108,7 @@ app.post("/api/posts/:id/like", (req, res) => {
   }
 
   post.likes += 1;
+  persistPosts();
   res.json({ id: post.id, likes: post.likes });
 });
 
@@ -119,11 +125,17 @@ app.listen(PORT, () => {
 
 function purgeExpiredPosts() {
   const cutoff = Date.now() - POST_TTL_MS;
+  let removed = 0;
   for (let i = posts.length - 1; i >= 0; i -= 1) {
     if (posts[i].timestamp < cutoff) {
       posts.splice(i, 1);
+      removed += 1;
     }
   }
+  if (removed > 0) {
+    persistPosts();
+  }
+  return removed;
 }
 
 function distanceInMeters(lat1, lng1, lat2, lng2) {
@@ -158,4 +170,71 @@ function sanitizeMood(value) {
   if (!trimmed) return "";
   const limited = Array.from(trimmed).slice(0, 4).join("");
   return limited || trimmed;
+}
+
+function ensureDataDir() {
+  if (!fs.existsSync(DATA_DIR)) {
+    fs.mkdirSync(DATA_DIR, { recursive: true });
+  }
+}
+
+function loadPosts() {
+  try {
+    if (!fs.existsSync(DATA_FILE)) {
+      return [];
+    }
+    const raw = fs.readFileSync(DATA_FILE, "utf8");
+    if (!raw) {
+      return [];
+    }
+
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) {
+      return [];
+    }
+
+    return parsed
+      .map((entry) => normalizeStoredPost(entry))
+      .filter((entry) => entry !== null);
+  } catch (error) {
+    console.warn("Failed to load posts from disk:", error);
+    return [];
+  }
+}
+
+function persistPosts() {
+  try {
+    ensureDataDir();
+    fs.writeFileSync(DATA_FILE, JSON.stringify(posts));
+  } catch (error) {
+    console.warn("Failed to persist posts to disk:", error);
+  }
+}
+
+function normalizeStoredPost(entry) {
+  if (!entry || typeof entry !== "object") {
+    return null;
+  }
+
+  const lat = Number(entry.lat);
+  const lng = Number(entry.lng);
+  const timestamp = Number(entry.timestamp);
+
+  if (!Number.isFinite(lat) || !Number.isFinite(lng) || !Number.isFinite(timestamp)) {
+    return null;
+  }
+
+  const text = sanitizeText(entry.text);
+  const mood = sanitizeMood(entry.mood);
+  const likes = Number(entry.likes);
+
+  return {
+    id: typeof entry.id === "string" ? entry.id : randomUUID(),
+    lat,
+    lng,
+    text,
+    mood: mood || null,
+    timestamp,
+    likes: Number.isFinite(likes) && likes >= 0 ? Math.floor(likes) : 0,
+  };
 }
