@@ -169,6 +169,11 @@ function initialize() {
       if (controller) {
         controller.setCollapsed(true);
         controller.card?.classList.add("card-hidden");
+        if (showComposerButton) {
+          requestAnimationFrame(() => {
+            showComposerButton.scrollIntoView({ behavior: "smooth", block: "nearest" });
+          });
+        }
       }
     });
   }
