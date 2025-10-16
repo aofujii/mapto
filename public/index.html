@@ -70,6 +70,18 @@
           </button>
           <button
             type="button"
+            class="map-control-button show-timeline-btn"
+            aria-label="近くの投稿を表示"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                d="M6 6.75h12a.75.75 0 0 0 0-1.5H6a.75.75 0 0 0 0 1.5Zm0 6h12a.75.75 0 0 0 0-1.5H6a.75.75 0 0 0 0 1.5Zm0 6h12a.75.75 0 0 0 0-1.5H6a.75.75 0 0 0 0 1.5Z"
+              />
+            </svg>
+            近くの投稿
+          </button>
+          <button
+            type="button"
             id="map-center-btn"
             class="map-control-button"
             aria-label="現在地に移動"
@@ -134,7 +146,12 @@
                 <span id="selected-location" class="location-hint"
                   >投稿位置が未設定です。現在地か地図をタップして選んでください。</span
                 >
-                <button type="submit" class="primary-button">マップに投稿</button>
+                <div class="form-actions">
+                  <button type="submit" class="primary-button">マップに投稿</button>
+                  <button type="button" class="secondary-button show-timeline-btn">
+                    近くの投稿を見る
+                  </button>
+                </div>
               </div>
             </div>
           </form>

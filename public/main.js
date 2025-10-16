@@ -49,6 +49,7 @@ const menuPanel = document.getElementById("menu-panel");
 const mapCenterButton = document.getElementById("map-center-btn");
 const showComposerButton = document.getElementById("show-composer-btn");
 const closeComposerButton = document.getElementById("close-composer-btn");
+const showTimelineButtons = document.querySelectorAll(".show-timeline-btn");
 const defaultPlaceholder =
   postText?.getAttribute("placeholder") ||
   "メッセージやおすすめを残してみよう（なくてもOK）";
@@ -169,6 +170,18 @@ function initialize() {
         controller.setCollapsed(true);
         controller.card?.classList.add("card-hidden");
       }
+    });
+  }
+
+  if (showTimelineButtons.length) {
+    showTimelineButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        const controller = collapsibleControllers.timeline;
+        if (controller) {
+          controller.ensureVisible();
+          controller.card?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        }
+      });
     });
   }
 
