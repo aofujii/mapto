@@ -1,0 +1,16 @@
+{
+  "name": "mapto",
+  "version": "1.0.0",
+  "description": "Prototype web service for location-based posts on a map",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^5.1.0",
+    "uuid": "^13.0.0"
+  }
+}
