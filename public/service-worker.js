@@ -1,4 +1,5 @@
 const scheduledTags = new Set();
+const OPEN_URL = "https://mapto.onrender.com/";
 
 self.addEventListener("install", (event) => {
   event.waitUntil(self.skipWaiting());
@@ -9,11 +10,19 @@ self.addEventListener("activate", (event) => {
 });
 
 self.addEventListener("message", (event) => {
-  const { type, reminders } = event.data || {};
+  const { type, reminders, title, body, tag, url } = event.data || {};
   if (type === "scheduleReminders") {
     event.waitUntil(scheduleReminders(reminders));
   } else if (type === "cancelReminders") {
     event.waitUntil(cancelReminders());
+  } else if (type === "showNow") {
+    event.waitUntil(
+      self.registration.showNotification(title || "MapToからのお知らせ", {
+        body: body || "",
+        tag: tag || "mapto-reminder",
+        data: { tag: tag || "mapto-reminder", url: url || OPEN_URL },
+      })
+    );
   }
 });
 
@@ -21,17 +30,24 @@ self.addEventListener("notificationclick", (event) => {
   event.notification.close();
   event.waitUntil(
     (async () => {
+      const targetUrl = event.notification?.data?.url || OPEN_URL;
       const allClients = await clients.matchAll({
         type: "window",
         includeUncontrolled: true,
       });
       if (allClients.length > 0) {
-        const client = allClients[0];
-        await client.focus();
+        // Prefer to focus an already open tab if it's the same origin/target.
+        const same = allClients.find((c) => c.url === targetUrl);
+        if (same) {
+          await same.focus();
+          return;
+        }
+        await allClients[0].focus();
+        await clients.openWindow(targetUrl);
       } else if (self.registration?.navigationPreload) {
-        await clients.openWindow("/");
+        await clients.openWindow(targetUrl);
       } else {
-        await clients.openWindow("/");
+        await clients.openWindow(targetUrl);
       }
     })()
   );
@@ -57,6 +73,7 @@ async function scheduleReminders(reminders = []) {
           showTrigger: trigger,
           data: {
             tag: reminder.tag || "mapto-reminder",
+            url: reminder.url || OPEN_URL,
           },
         }
       );

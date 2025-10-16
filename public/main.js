@@ -687,11 +687,22 @@ function showReminderNotification() {
   }
   const message = pickNotificationMessage();
   try {
-    new Notification("MapToからのお知らせ", {
-      body: message,
-      tag: "mapto-reminder",
-      renotify: false,
-    });
+    // Prefer Service Worker notifications so click opens target URL consistently.
+    if (swRegistration && typeof swRegistration.showNotification === "function") {
+      swRegistration.showNotification("MapToからのお知らせ", {
+        body: message,
+        tag: "mapto-reminder",
+        renotify: false,
+        data: { url: "https://mapto.onrender.com/" },
+      });
+    } else {
+      // Fallback to page Notification (click handling may be limited by browser)
+      new Notification("MapToからのお知らせ", {
+        body: message,
+        tag: "mapto-reminder",
+        renotify: false,
+      });
+    }
   } catch (error) {
     console.error(error);
     disableNotificationReminders();
