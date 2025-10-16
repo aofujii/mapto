@@ -22,11 +22,10 @@ const map = L.map("map", {
   inertia: true,
 });
 
-L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png", {
+L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
   maxZoom: 19,
   attribution:
-    '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
-  subdomains: "abcd",
+    '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
 }).addTo(map);
 
 map.dragging.enable();
@@ -48,6 +47,8 @@ const menuToggle = document.getElementById("menu-toggle");
 const menuClose = document.getElementById("menu-close");
 const menuPanel = document.getElementById("menu-panel");
 const mapCenterButton = document.getElementById("map-center-btn");
+const showComposerButton = document.getElementById("show-composer-btn");
+const closeComposerButton = document.getElementById("close-composer-btn");
 const defaultPlaceholder =
   postText?.getAttribute("placeholder") ||
   "メッセージやおすすめを残してみよう（なくてもOK）";
@@ -148,6 +149,29 @@ function initialize() {
     });
   }
 
+  if (showComposerButton) {
+    showComposerButton.addEventListener("click", () => {
+      const controller = collapsibleControllers.composer;
+      if (controller) {
+        controller.ensureVisible();
+        const card = controller.card;
+        if (card) {
+          card.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        }
+      }
+    });
+  }
+
+  if (closeComposerButton) {
+    closeComposerButton.addEventListener("click", () => {
+      const controller = collapsibleControllers.composer;
+      if (controller) {
+        controller.setCollapsed(true);
+        controller.card?.classList.add("card-hidden");
+      }
+    });
+  }
+
   setInterval(fetchPosts, 30000);
 }
 
@@ -228,6 +252,7 @@ function setupCollapsibleControls() {
       toggle: document.querySelector('.collapse-toggle[data-target="composer"]'),
       collapseLabel: "投稿フォームを折りたたむ",
       expandLabel: "投稿フォームを表示する",
+      startCollapsed: true,
     },
     {
       key: "timeline",
@@ -236,6 +261,7 @@ function setupCollapsibleControls() {
       toggle: document.querySelector('.collapse-toggle[data-target="timeline"]'),
       collapseLabel: "タイムラインを折りたたむ",
       expandLabel: "タイムラインを表示する",
+      startCollapsed: false,
     },
   ];
 
@@ -261,10 +287,11 @@ function createCollapsibleController({
   toggle,
   collapseLabel,
   expandLabel,
+  startCollapsed = false,
 }) {
-  if (!card || !body || !toggle) return null;
-  const iconSpan = toggle.querySelector('[aria-hidden="true"]');
-  const srSpan = toggle.querySelector(".sr-only");
+  if (!card || !body) return null;
+  const iconSpan = toggle?.querySelector('[aria-hidden="true"]');
+  const srSpan = toggle?.querySelector(".sr-only");
 
   const controller = {
     key,
@@ -278,23 +305,43 @@ function createCollapsibleController({
       if (controller.collapsed) return;
       requestAnimationFrame(() => {
         if (controller.collapsed) return;
-        body.style.maxHeight = `${body.scrollHeight}px`;
+        if (controller.key === "composer") {
+          body.style.maxHeight = "none";
+        } else {
+          body.style.maxHeight = `${body.scrollHeight}px`;
+        }
       });
+    },
+    ensureVisible() {
+      if (!card) return;
+      card.classList.remove("card-hidden");
+      controller.setCollapsed(false);
+      if (controller.key !== "composer") {
+        requestAnimationFrame(() => controller.refreshHeight());
+      }
     },
     setCollapsed(nextState) {
       controller.collapsed = nextState;
       card.classList.toggle("card-collapsed", nextState);
-      toggle.setAttribute("aria-expanded", nextState ? "false" : "true");
+      if (toggle) {
+        toggle.setAttribute("aria-expanded", nextState ? "false" : "true");
+      }
       if (nextState) {
         body.style.maxHeight = "0px";
         body.dataset.open = "false";
         if (iconSpan) iconSpan.textContent = "＋";
         if (srSpan) srSpan.textContent = expandLabel;
+        card.classList.add("card-hidden");
       } else {
         body.dataset.open = "true";
+        card.classList.remove("card-hidden");
         requestAnimationFrame(() => {
           if (controller.collapsed) return;
-          body.style.maxHeight = `${body.scrollHeight}px`;
+          if (controller.key === "composer") {
+            body.style.maxHeight = "none";
+          } else {
+            body.style.maxHeight = `${body.scrollHeight}px`;
+          }
         });
         if (iconSpan) iconSpan.textContent = "－";
         if (srSpan) srSpan.textContent = collapseLabel;
@@ -307,28 +354,32 @@ function createCollapsibleController({
     },
   };
 
-  body.dataset.open = "true";
-  const startCollapsed = key === "timeline";
-  toggle.setAttribute("aria-expanded", startCollapsed ? "false" : "true");
+  body.dataset.open = startCollapsed ? "false" : "true";
+  controller.collapsed = Boolean(startCollapsed);
+  if (toggle) {
+    toggle.setAttribute("aria-expanded", startCollapsed ? "false" : "true");
+  }
   if (iconSpan) iconSpan.textContent = startCollapsed ? "＋" : "－";
   if (srSpan) srSpan.textContent = startCollapsed ? expandLabel : collapseLabel;
-  controller.collapsed = startCollapsed;
   if (startCollapsed) {
     body.dataset.open = "false";
     body.style.maxHeight = "0px";
     card.classList.add("card-collapsed");
+    card.classList.add("card-hidden");
   } else {
     controller.refreshHeight();
   }
 
-  // Initialize expanded state without animation flash.
+  // Initialize expanded/collapsed state without animation flash.
   requestAnimationFrame(() => {
     controller.setCollapsed(startCollapsed);
   });
 
-  toggle.addEventListener("click", () => {
-    controller.setCollapsed(!controller.collapsed);
-  });
+  if (toggle) {
+    toggle.addEventListener("click", () => {
+      controller.setCollapsed(!controller.collapsed);
+    });
+  }
 
   return controller;
 }

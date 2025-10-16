@@ -54,34 +54,46 @@
           </div>
         </aside>
 
-        <button
-          type="button"
-          id="map-center-btn"
-          class="map-control-button"
-          aria-label="現在地に移動"
-        >
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path
-              d="M12 5.5a6.5 6.5 0 1 0 6.5 6.5A6.508 6.508 0 0 0 12 5.5zm8.944 5.5h-1.695A7.761 7.761 0 0 0 13 5.751V4.056a1 1 0 0 0-2 0v1.695a7.761 7.761 0 0 0-6.249 5.249H3.056a1 1 0 1 0 0 2h1.695A7.761 7.761 0 0 0 11 18.249v1.695a1 1 0 1 0 2 0v-1.695a7.761 7.761 0 0 0 6.249-6.249h1.695a1 1 0 0 0 0-2ZM12 17a5 5 0 1 1 5-5 5.006 5.006 0 0 1-5 5Z"
-            />
-          </svg>
-          現在地
-        </button>
+        <div class="quick-actions">
+          <button
+            type="button"
+            id="show-composer-btn"
+            class="map-control-button"
+            aria-label="投稿フォームを開く"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                d="M12 22a1 1 0 0 1-1-1v-8H3a1 1 0 0 1 0-2h8V3a1 1 0 0 1 2 0v8h8a1 1 0 0 1 0 2h-8v8a1 1 0 0 1-1 1Z"
+              />
+            </svg>
+            投稿する
+          </button>
+          <button
+            type="button"
+            id="map-center-btn"
+            class="map-control-button"
+            aria-label="現在地に移動"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                d="M12 5.5a6.5 6.5 0 1 0 6.5 6.5A6.508 6.508 0 0 0 12 5.5zm8.944 5.5h-1.695A7.761 7.761 0 0 0 13 5.751V4.056a1 1 0 0 0-2 0v1.695a7.761 7.761 0 0 0-6.249 5.249H3.056a1 1 0 1 0 0 2h1.695A7.761 7.761 0 0 0 11 18.249v1.695a1 1 0 1 0 2 0v-1.695a7.761 7.761 0 0 0 6.249-6.249h1.695a1 1 0 0 0 0-2ZM12 17a5 5 0 1 1 5-5 5.006 5.006 0 0 1-5 5Z"
+              />
+            </svg>
+            現在地
+          </button>
+        </div>
 
-        <section class="composer-card" id="composer-card" data-card="composer">
+        <section class="composer-card card-hidden" id="composer-card" data-card="composer">
           <form id="post-form" class="post-form">
             <div class="composer-header">
               <h2>いまの気分をシェア</h2>
               <div class="composer-actions">
                 <button
                   type="button"
-                  class="collapse-toggle"
-                  data-target="composer"
-                  aria-expanded="true"
-                  aria-controls="composer-body"
+                  id="close-composer-btn"
+                  class="secondary-button ghost"
                 >
-                  <span aria-hidden="true">－</span>
-                  <span class="sr-only">投稿フォームを折りたたむ</span>
+                  閉じる
                 </button>
                 <button
                   type="button"
@@ -95,14 +107,20 @@
 
             <div class="composer-body collapsible-body" id="composer-body" data-open="true">
               <div class="mood-picker" id="mood-picker">
-                <button type="button" data-mood="😊">😊</button>
-                <button type="button" data-mood="🔥">🔥</button>
-                <button type="button" data-mood="🌧️">🌧️</button>
-                <button type="button" data-mood="🌸">🌸</button>
+                <button type="button" data-mood="☺️">☺️</button>
+                <button type="button" data-mood="😀">😀</button>
+                <button type="button" data-mood="🥺">🥺</button>
+                <button type="button" data-mood="😔">😔</button>
+                <button type="button" data-mood="😡">😡</button>
+                <button type="button" data-mood="☀️">☀️</button>
+                <button type="button" data-mood="☁️">☁️</button>
+                <button type="button" data-mood="☂️">☂️</button>
+                <button type="button" data-mood="☕">☕</button>
                 <button type="button" data-mood="🍜">🍜</button>
-                <button type="button" data-mood="🎧">🎧</button>
-                <button type="button" data-mood="🏖️">🏖️</button>
-                <button type="button" data-mood="🚴">🚴</button>
+                <button type="button" data-mood="💻️">💻️</button>
+                <button type="button" data-mood="🚍️">🚍️</button>
+                <button type="button" data-mood="🚗">🚗</button>
+                <button type="button" data-mood="🚃">🚃</button>
               </div>
 
               <label class="sr-only" for="post-text">投稿内容</label>
@@ -150,7 +168,7 @@
               </button>
             </div>
           </div>
-          <div class="timeline-body collapsible-body" id="timeline-body" data-open="false">
+          <div class="timeline-body collapsible-body" id="timeline-body" data-open="true">
             <ul id="timeline" class="timeline-list"></ul>
           </div>
         </section>
