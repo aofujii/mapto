@@ -870,10 +870,13 @@ function renderPosts(posts, centerLatLng) {
 }
 
 function addMarker(post) {
+  const markerContent = buildMarkerContent(post);
   const marker = L.marker([post.lat, post.lng], {
     icon: L.divIcon({
-      className: "post-marker",
-      html: buildMarkerHtml(post),
+      className: ["post-marker", markerContent.extraClass]
+        .filter(Boolean)
+        .join(" "),
+      html: markerContent.html,
       iconSize: null,
     }),
   });
@@ -898,7 +901,7 @@ function addMarker(post) {
   markersLayer.addLayer(marker);
 }
 
-function buildMarkerHtml(post) {
+function buildMarkerContent(post) {
   const MAX_LENGTH = 60;
   const baseText = (post.text || "").trim();
   const truncated =
@@ -906,20 +909,35 @@ function buildMarkerHtml(post) {
       ? `${baseText.slice(0, MAX_LENGTH)}…`
       : baseText;
   const escapedText = escapeHtml(truncated);
+  const hasText = Boolean(truncated);
+  const hasMoodOnly = post.mood && !hasText;
+
+  if (hasMoodOnly) {
+    return {
+      extraClass: "post-marker--emoji",
+      html: `<div class="post-marker__emoji-only">${escapeHtml(
+        post.mood
+      )}</div>`,
+    };
+  }
+
   let displayText = "新しい投稿";
-  if (post.mood && truncated) {
+  if (post.mood && hasText) {
     displayText = `${post.mood} ${escapedText}`;
   } else if (post.mood) {
     displayText = post.mood;
-  } else if (truncated) {
+  } else if (hasText) {
     displayText = escapedText;
   }
-  return `
-    <div class="post-marker__bubble">
-      <div class="post-marker__text">${displayText}</div>
-      <div class="post-marker__meta">❤️ ${post.likes}</div>
-    </div>
-  `;
+  return {
+    extraClass: "",
+    html: `
+      <div class="post-marker__bubble">
+        <div class="post-marker__text">${displayText}</div>
+        <div class="post-marker__meta">❤️ ${post.likes}</div>
+      </div>
+    `.trim(),
+  };
 }
 
 function buildTimelineItem(post, centerLatLng) {
