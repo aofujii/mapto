@@ -8,8 +8,23 @@ const PORT = process.env.PORT || 3000;
 
 const POST_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
 const DEFAULT_RADIUS_METERS = 5000;
+
+const connectionString =
+  process.env.DATABASE_URL ||
+  process.env.DATABASE_INTERNAL_URL ||
+  process.env.DATABASE_EXTERNAL_URL ||
+  process.env.POSTGRES_URL ||
+  process.env.DB_URL;
+
+if (!connectionString) {
+  console.error(
+    "DATABASE_URL (or DATABASE_INTERNAL_URL / DATABASE_EXTERNAL_URL) must be set to connect to PostgreSQL",
+  );
+  process.exit(1);
+}
+
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
+  connectionString,
   ssl:
     process.env.NODE_ENV === "production"
       ? { rejectUnauthorized: false }
@@ -152,7 +167,7 @@ app.use((req, res) => {
 async function initializeDatabase() {
   if (!pool.options.connectionString) {
     throw new Error(
-      "DATABASE_URL environment variable must be set to connect to PostgreSQL",
+      "PostgreSQL connection string is not configured; set DATABASE_URL or DATABASE_INTERNAL_URL",
     );
   }
 
